@@ -1,6 +1,6 @@
 const apikey = '3fc5d7e9-68c8-41cc-910b-295dfa8c0a15';
 const apihost = 'https://todo-api.coderslab.pl';
-
+// console.log(document.querySelector('main'));
 /*
 *   Fetch a list of all tasks
 *   @return {json}    a json object with all tasks
@@ -38,8 +38,29 @@ function apiListOperationsForTask(taskId) {
     );
 }
 
-
-
+/*
+*   Function sends task title and description to API using POST method
+*   @param {Strig}  title           operation title
+*   @param {String} description     operations description
+*   @return {json}                  returns json object
+ */
+function apiCreateTask(title, description) {
+  return fetch(
+    apihost + '/api/tasks',
+    {
+      headers: { Authorization: apikey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, description: description, status: 'open' }),
+      method: 'POST'
+    }
+  ).then(
+    function(resp) {
+      if(!resp.ok) {
+        alert('Wystąpił błąd! Otwórz devtools i zakładkę Sieć/Network, i poszukaj przyczyny');
+      }
+      return resp.json();
+    }
+  );
+}
 
 /*
 *   Function renders task id, status, title, description
@@ -122,7 +143,7 @@ function renderTasks(taskId, status, title, description) {
     addBtn.classList = 'btn btn-info';
     addBtn.innerText = 'Add';
     formBtnDiv.appendChild(addBtn);
-};
+}
 
 function renderOperations(operationsList, status, timeSpent, opId, operationDescription){
     const li = document.createElement('li');
@@ -160,11 +181,21 @@ function renderOperations(operationsList, status, timeSpent, opId, operationDesc
 }
 
 document.addEventListener('DOMContentLoaded', function(){
-   apiListTask().then(function(response){
-      response.data.forEach(function(task) {
-          renderTasks(task.id, task.status, task.title, task.description);
-
+    apiListTask().then(function(response){
+        response.data.forEach(function(task) {
+            renderTasks(task.id, task.status, task.title, task.description);
       });
    });
 });
+
+// TODO: set up adding tasks
+// document.querySelector('form.js-task-adding-form').addEventListener('submit', function(event){
+//     event.preventDefault();
+//     const title = document.querySelector('input[name="title"]').value;
+//     const description = document.querySelector('input[name="description"]').value;
+//     apiCreateTask(title, description);
+// });
+
+
+
 
