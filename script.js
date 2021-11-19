@@ -107,6 +107,24 @@ function apiCreateOperationForTask(taskId, description) {
   );
 }
 
+function apiUpdateOperation(operationId, description, timeSpent) {
+    return fetch(
+    apihost + '/api/operations/' + operationId,
+    {
+      headers: { Authorization: apikey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: description, timeSpent: timeSpent }),
+      method: 'PUT'
+    }
+  ).then(
+    function(resp) {
+      if(!resp.ok) {
+        alert('Wystąpił błąd! Otwórz devtools i zakładkę Sieć/Network, i poszukaj przyczyny');
+      }
+      return resp.json();
+    }
+  );
+}
+
 /*
 *   Function renders task id, status, title, description
 *   @param {String}     taskId      ID number of current task
@@ -221,16 +239,32 @@ function renderOperations(operationsList, status, timeSpent, opId, operationDesc
     const operationBtnDiv = document.createElement('div');
     li.appendChild(operationBtnDiv);
 
-    if(status == 'open') {
+    if(status === 'open') {
         const btn15Min = document.createElement('button');
         btn15Min.classList = 'btn btn-outline-success btn-sm mr-2';
         btn15Min.innerText = '+15min';
         operationBtnDiv.appendChild(btn15Min);
+        btn15Min.addEventListener('click', function (event){
+            event.preventDefault();
+            timeSpent += 15;
+            apiUpdateOperation(opId, operationDescription, timeSpent).then(
+                function(response){ // TODO: setup page refresh...
+                }
+            );
+        });
 
         const btn1H = document.createElement('button');
         btn1H.classList = 'btn btn-outline-success btn-sm mr-2';
         btn1H.innerText = '+1h';
         operationBtnDiv.appendChild(btn1H);
+        btn1H.addEventListener('click', function (event){
+            event.preventDefault();
+            timeSpent += 60;
+            apiUpdateOperation(opId, operationDescription, timeSpent).then(
+                function(response){ // TODO: setup page refresh...
+                }
+            );
+        });
 
         const opDelBtn = document.createElement('button');
         opDelBtn.classList = 'btn btn-outline-danger btn-sm';
