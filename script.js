@@ -1,6 +1,6 @@
 const apikey = '3fc5d7e9-68c8-41cc-910b-295dfa8c0a15';
 const apihost = 'https://todo-api.coderslab.pl';
-// console.log(document.querySelector('main'));
+
 /*
 *   Fetch a list of all tasks
 *   @return {json}    a json object with all tasks
@@ -39,6 +39,28 @@ function apiListOperationsForTask(taskId) {
 }
 
 /*
+*   Function deleting a task from API based on task ID
+*   @param  {String}    taskId  An id of the task to be deleted
+*   @return {json}              returns a json object
+ */
+function apiDeleteTask(taskId) {
+  return fetch(
+    apihost + '/api/tasks/' + taskId,
+    {
+      headers: { Authorization: apikey, 'Content-Type': 'application/json' },
+      method: 'DELETE'
+    }
+  ).then(
+    function(resp) {
+      if(!resp.ok) {
+        alert('Wystąpił błąd! Otwórz devtools i zakładkę Sieć/Network, i poszukaj przyczyny');
+      }
+      return resp.json();
+    }
+  );
+}
+
+/*
 *   Function sends task title and description to API using POST method
 *   @param {Strig}  title           operation title
 *   @param {String} description     operations description
@@ -50,6 +72,29 @@ function apiCreateTask(title, description) {
     {
       headers: { Authorization: apikey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: title, description: description, status: 'open' }),
+      method: 'POST'
+    }
+  ).then(
+    function(resp) {
+      if(!resp.ok) {
+        alert('Wystąpił błąd! Otwórz devtools i zakładkę Sieć/Network, i poszukaj przyczyny');
+      }
+      return resp.json();
+    }
+  );
+}
+
+/*
+*   Function creates a new operation for a task based on its ID and description
+*   @param {String}     taskId      ID of a task
+*   @param {String}     description A description of an operation
+ */
+function apiCreateOperationForTask(taskId, description) {
+    return fetch(
+    apihost + '/api/tasks/' + taskId + '/operations',
+    {
+      headers: { Authorization: apikey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: description, timeSpent: 0 }),
       method: 'POST'
     }
   ).then(
@@ -106,6 +151,13 @@ function renderTasks(taskId, status, title, description) {
     deleteBtn.classList = 'btn btn-outline-danger btn-sm ml-2';
     deleteBtn.innerText = 'Delete'
     btnDiv.appendChild(deleteBtn);
+    deleteBtn.addEventListener('click', function (){
+        apiDeleteTask(taskId).then(
+            function(){
+                section.remove()
+            }
+        );
+    })
 
     const ul = document.createElement('ul');
     ul.classList = 'list-group list-group-flush';
@@ -143,6 +195,13 @@ function renderTasks(taskId, status, title, description) {
     addBtn.classList = 'btn btn-info';
     addBtn.innerText = 'Add';
     formBtnDiv.appendChild(addBtn);
+
+    form.addEventListener('submit', function(event){
+        event.preventDefault();
+        apiCreateOperationForTask(taskId, operationInput.value).then(function(response){
+            renderOperations(ul, status, response.data.timeSpent, response.data.id, response.data.description)
+        })
+    })
 }
 
 function renderOperations(operationsList, status, timeSpent, opId, operationDescription){
@@ -186,16 +245,14 @@ document.addEventListener('DOMContentLoaded', function(){
             renderTasks(task.id, task.status, task.title, task.description);
       });
    });
+    document.querySelector('form.js-task-adding-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const title = document.querySelector('input[name="title"]').value;
+    const description = document.querySelector('input[name="description"]').value;
+    apiCreateTask(title, description).then(function(response){
+        renderTasks(response.data.id, response.data.status, response.data.title, response.data.description);
+    });
+    });
 });
-
-// TODO: set up adding tasks
-// document.querySelector('form.js-task-adding-form').addEventListener('submit', function(event){
-//     event.preventDefault();
-//     const title = document.querySelector('input[name="title"]').value;
-//     const description = document.querySelector('input[name="description"]').value;
-//     apiCreateTask(title, description);
-// });
-
-
 
 
