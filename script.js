@@ -280,6 +280,16 @@ function renderTasks(taskId, status, title, description) {
     }
 }
 
+function formatTime(timeSpent) {
+  const hours = Math.floor(timeSpent / 60);
+  const minutes = timeSpent % 60;
+  if(hours > 0) {
+    return hours + 'h ' + minutes + 'm';
+  } else {
+    return minutes + 'm';
+  }
+}
+
 function renderOperations(operationsList, status, timeSpent, opId, operationDescription){
     const li = document.createElement('li');
     li.classList = 'list-group-item d-flex justify-content-between align-items-center';
@@ -291,13 +301,8 @@ function renderOperations(operationsList, status, timeSpent, opId, operationDesc
     
     const timeSpan = document.createElement('span');
     timeSpan.classList = 'badge badge-success badge-pill ml-2'
-    if(timeSpent > 59){
-        const hour = ~~(timeSpent / 60);
-        const minute = timeSpent % 60;
-        timeSpan.innerText = `${hour}h ${minute}min`;
-    } else {
-        timeSpan.innerText = timeSpent + 'min';
-    }
+    timeSpan.innerText = formatTime(timeSpent);
+
     liDiv.appendChild(timeSpan);
 
     const operationBtnDiv = document.createElement('div');
@@ -312,7 +317,9 @@ function renderOperations(operationsList, status, timeSpent, opId, operationDesc
             event.preventDefault();
             timeSpent += 15;
             apiUpdateOperation(opId, operationDescription, timeSpent).then(
-                function(response){ // TODO: setup page refresh...
+                function(response){
+                    timeSpent = response.data.timeSpent;
+                    timeSpan.innerText = formatTime(timeSpent);
                 }
             );
         });
@@ -325,7 +332,9 @@ function renderOperations(operationsList, status, timeSpent, opId, operationDesc
             event.preventDefault();
             timeSpent += 60;
             apiUpdateOperation(opId, operationDescription, timeSpent).then(
-                function(response){ // TODO: setup page refresh...
+                function(response){
+                    timeSpent = response.data.timeSpent;
+                    timeSpan.innerText = formatTime(timeSpent);
                 }
             );
         });
