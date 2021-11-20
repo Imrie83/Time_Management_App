@@ -61,6 +61,27 @@ function apiDeleteTask(taskId) {
 }
 
 /*
+*   Function deletes an operation
+*   @param {String}     operationId     An ID of an operation
+ */
+function apiDeleteOperation(operationId) {
+  return fetch(
+    apihost + '/api/operations/' + operationId,
+    {
+      headers: { Authorization: apikey, 'Content-Type': 'application/json' },
+      method: 'DELETE'
+    }
+  ).then(
+    function(resp) {
+      if(!resp.ok) {
+        alert('Wystąpił błąd! Otwórz devtools i zakładkę Sieć/Network, i poszukaj przyczyny');
+      }
+      return resp.json();
+    }
+  );
+}
+
+/*
 *   Function sends task title and description to API using POST method
 *   @param {Strig}  title           operation title
 *   @param {String} description     operations description
@@ -73,6 +94,30 @@ function apiCreateTask(title, description) {
       headers: { Authorization: apikey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: title, description: description, status: 'open' }),
       method: 'POST'
+    }
+  ).then(
+    function(resp) {
+      if(!resp.ok) {
+        alert('Wystąpił błąd! Otwórz devtools i zakładkę Sieć/Network, i poszukaj przyczyny');
+      }
+      return resp.json();
+    }
+  );
+}
+
+/*
+*   Function updates tasks status to close to disable editing
+*   @param {Strig}  title           operation title
+*   @param {String} description     operations description
+*   @return {json}                  returns json object
+ */
+function apiUpdateTask(taskId, title, description, status) {
+  return fetch(
+    apihost + '/api/tasks/' + taskId,
+    {
+      headers: { Authorization: apikey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, description: description, status: status }),
+      method: 'PUT'
     }
   ).then(
     function(resp) {
@@ -158,11 +203,21 @@ function renderTasks(taskId, status, title, description) {
     const btnDiv = document.createElement('div');
     mainDiv.appendChild(btnDiv);
 
-    if(status == 'open') {
+    if(status === 'open') {
         const finishBtn = document.createElement('button');
-        finishBtn.classList = 'btn btn-dark btn-sm';
+        finishBtn.classList = 'btn btn-dark btn-sm js-task-open';
         finishBtn.innerText = 'Finish'
         btnDiv.appendChild(finishBtn);
+        btnDiv.addEventListener('click', function (event){
+            event.preventDefault();
+            apiUpdateTask(taskId, title, description, 'closed');
+            section.querySelectorAll('.js-task-open').forEach(
+                    function(element){
+                        element.remove();
+                    }
+                );
+            }
+        );
     }
 
     const deleteBtn = document.createElement('button');
@@ -187,39 +242,42 @@ function renderTasks(taskId, status, title, description) {
         });
     });
 
-    const mainFormDiv = document.createElement('div')
-    mainFormDiv.classList = 'card-body';
-    section.appendChild(mainFormDiv)
+    if(status === 'open') {
 
-    const form = document.createElement('form');
-    mainFormDiv.appendChild(form);
+        const mainFormDiv = document.createElement('div')
+        mainFormDiv.classList = 'card-body js-task-open';
+        section.appendChild(mainFormDiv)
 
-    const formInputDiv = document.createElement('div');
-    formInputDiv.classList = 'input-group';
-    form.appendChild(formInputDiv);
+        const form = document.createElement('form');
+        mainFormDiv.appendChild(form);
 
-    const operationInput = document.createElement('input');
-    operationInput.classList = 'form-control';
-    operationInput.minLength = '5';
-    operationInput.placeholder = 'Operation description';
-    operationInput.type = 'text';
-    formInputDiv.appendChild(operationInput);
+        const formInputDiv = document.createElement('div');
+        formInputDiv.classList = 'input-group';
+        form.appendChild(formInputDiv);
 
-    const formBtnDiv = document.createElement('div');
-    formBtnDiv.classList = 'input-group-append';
-    formInputDiv.appendChild(formBtnDiv);
+        const operationInput = document.createElement('input');
+        operationInput.classList = 'form-control';
+        operationInput.minLength = '5';
+        operationInput.placeholder = 'Operation description';
+        operationInput.type = 'text';
+        formInputDiv.appendChild(operationInput);
 
-    const addBtn = document.createElement('button');
-    addBtn.classList = 'btn btn-info';
-    addBtn.innerText = 'Add';
-    formBtnDiv.appendChild(addBtn);
+        const formBtnDiv = document.createElement('div');
+        formBtnDiv.classList = 'input-group-append';
+        formInputDiv.appendChild(formBtnDiv);
 
-    form.addEventListener('submit', function(event){
-        event.preventDefault();
-        apiCreateOperationForTask(taskId, operationInput.value).then(function(response){
-            renderOperations(ul, status, response.data.timeSpent, response.data.id, response.data.description)
-        })
-    })
+        const addBtn = document.createElement('button');
+        addBtn.classList = 'btn btn-info';
+        addBtn.innerText = 'Add';
+        formBtnDiv.appendChild(addBtn);
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            apiCreateOperationForTask(taskId, operationInput.value).then(function (response) {
+                renderOperations(ul, status, response.data.timeSpent, response.data.id, response.data.description)
+            });
+        });
+    }
 }
 
 function renderOperations(operationsList, status, timeSpent, opId, operationDescription){
@@ -233,7 +291,13 @@ function renderOperations(operationsList, status, timeSpent, opId, operationDesc
     
     const timeSpan = document.createElement('span');
     timeSpan.classList = 'badge badge-success badge-pill ml-2'
-    timeSpan.innerText = timeSpent + 'min';
+    if(timeSpent > 59){
+        const hour = ~~(timeSpent / 60);
+        const minute = timeSpent % 60;
+        timeSpan.innerText = `${hour}h ${minute}min`;
+    } else {
+        timeSpan.innerText = timeSpent + 'min';
+    }
     liDiv.appendChild(timeSpan);
 
     const operationBtnDiv = document.createElement('div');
@@ -241,7 +305,7 @@ function renderOperations(operationsList, status, timeSpent, opId, operationDesc
 
     if(status === 'open') {
         const btn15Min = document.createElement('button');
-        btn15Min.classList = 'btn btn-outline-success btn-sm mr-2';
+        btn15Min.classList = 'btn btn-outline-success btn-sm mr-2 js-task-open';
         btn15Min.innerText = '+15min';
         operationBtnDiv.appendChild(btn15Min);
         btn15Min.addEventListener('click', function (event){
@@ -254,7 +318,7 @@ function renderOperations(operationsList, status, timeSpent, opId, operationDesc
         });
 
         const btn1H = document.createElement('button');
-        btn1H.classList = 'btn btn-outline-success btn-sm mr-2';
+        btn1H.classList = 'btn btn-outline-success btn-sm mr-2 js-task-open';
         btn1H.innerText = '+1h';
         operationBtnDiv.appendChild(btn1H);
         btn1H.addEventListener('click', function (event){
@@ -270,6 +334,14 @@ function renderOperations(operationsList, status, timeSpent, opId, operationDesc
         opDelBtn.classList = 'btn btn-outline-danger btn-sm';
         opDelBtn.innerText = 'Delete';
         operationBtnDiv.appendChild(opDelBtn);
+        opDelBtn.addEventListener('click', function(event){
+            event.preventDefault();
+            apiDeleteOperation(opId).then(
+                function(){
+                    li.remove();
+                }
+            );
+        });
     }
 }
 
@@ -288,5 +360,3 @@ document.addEventListener('DOMContentLoaded', function(){
     });
     });
 });
-
-
