@@ -274,7 +274,8 @@ function renderTasks(taskId, status, title, description) {
         form.addEventListener('submit', function (event) {
             event.preventDefault();
             apiCreateOperationForTask(taskId, operationInput.value).then(function (response) {
-                renderOperations(ul, status, response.data.timeSpent, response.data.id, response.data.description)
+                operationInput.value = '';
+                renderOperations(ul, status, response.data.timeSpent, response.data.id, response.data.description);
             });
         });
     }
